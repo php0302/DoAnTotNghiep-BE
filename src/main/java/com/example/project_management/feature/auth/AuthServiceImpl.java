@@ -60,10 +60,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new InvalidRequestException("Username is already taken!");
+            throw new com.example.project_management.exception.ConflictException("Username is already taken!");
         }
         if (userRepository.existsByEmail(request.email())) {
-            throw new InvalidRequestException("Email is already taken!");
+            throw new com.example.project_management.exception.ConflictException("Email is already taken!");
         }
 
         User user = new User();

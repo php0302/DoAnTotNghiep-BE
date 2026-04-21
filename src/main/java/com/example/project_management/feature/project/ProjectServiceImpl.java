@@ -7,6 +7,9 @@ import com.example.project_management.feature.project.dto.ProjectRequest;
 import com.example.project_management.feature.project.dto.ProjectResponse;
 import com.example.project_management.feature.user.User;
 import com.example.project_management.feature.user.UserRepository;
+import com.example.project_management.feature.task.Task;
+import com.example.project_management.feature.task.TaskRepository;
+import com.example.project_management.feature.comment.CommentRepository;
 import com.example.project_management.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,18 +23,29 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
+    private final CommentRepository commentRepository;
 
     public ProjectServiceImpl(ProjectRepository projectRepository,
                               ProjectMemberRepository projectMemberRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              TaskRepository taskRepository,
+                              CommentRepository commentRepository) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
+        this.commentRepository = commentRepository;
     }
 
     @Override
     @Transactional
     public ProjectResponse createProject(ProjectRequest request) {
+        if (!request.isEndDateValid()) {
+            throw new com.example.project_management.exception.InvalidRequestException(
+                    "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+        }
+
         Long currentUserId = SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new ResourceNotFoundException("User", "context", "current user id"));
         User currentUser = userRepository.findById(currentUserId)
@@ -59,6 +73,11 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public ProjectResponse updateProject(Long id, ProjectRequest request) {
+        if (!request.isEndDateValid()) {
+            throw new com.example.project_management.exception.InvalidRequestException(
+                    "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+        }
+
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
 
@@ -75,15 +94,45 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponse getProjectById(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
+
+        // Kiểm tra quyền: Admin/PM thấy tất cả; member khác chỉ thấy project mình tham gia
+        boolean isPrivileged = isAdminOrManager();
+        if (!isPrivileged) {
+            Long currentUserId = SecurityUtil.getCurrentUserId().orElse(null);
+            boolean isMember = projectMemberRepository.existsByProjectIdAndUserId(id, currentUserId);
+            if (!isMember) {
+                throw new com.example.project_management.exception.ForbiddenException(
+                        "Bạn không phải thành viên của dự án này");
+            }
+        }
         return ProjectResponse.fromEntity(project);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAllProjects() {
-        return projectRepository.findAll().stream()
+        boolean isPrivileged = isAdminOrManager();
+        if (isPrivileged) {
+            // Admin/PM thấy tất cả
+            return projectRepository.findAll().stream()
+                    .map(ProjectResponse::fromEntity)
+                    .collect(Collectors.toList());
+        }
+        // Member thường chỉ thấy project mình tham gia
+        Long currentUserId = SecurityUtil.getCurrentUserId()
+                .orElseThrow(() -> new ResourceNotFoundException("User", "context", "current user"));
+        return projectRepository.findByMemberUserId(currentUserId).stream()
                 .map(ProjectResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    /** Kiểm tra user hiện tại có role cao không (ADMIN hoặc PROJECT_MANAGER) */
+    private boolean isAdminOrManager() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_PROJECT_MANAGER"));
     }
 
     @Override
@@ -92,7 +141,19 @@ public class ProjectServiceImpl implements ProjectService {
         if (!projectRepository.existsById(id)) {
             throw new ResourceNotFoundException("Project", "id", id);
         }
-        // TODO: delete members and tasks before deleting project, or handle cascade
+        
+        // 1. Delete all comments inside tasks of this project
+        // 2. Delete the tasks
+        List<Task> tasks = taskRepository.findByProjectId(id);
+        for (Task task : tasks) {
+            commentRepository.deleteByTaskId(task.getId());
+            taskRepository.delete(task);
+        }
+
+        // 3. Delete all project members
+        projectMemberRepository.deleteByProjectId(id);
+
+        // 4. Finally delete the project
         projectRepository.deleteById(id);
     }
 
@@ -105,7 +166,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.userId()));
 
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, request.userId())) {
-            throw new InvalidRequestException("User is already a member of this project");
+            throw new com.example.project_management.exception.ConflictException("User is already a member of this project");
         }
 
         ProjectMember member = new ProjectMember();
@@ -113,5 +174,16 @@ public class ProjectServiceImpl implements ProjectService {
         member.setUser(user);
         member.setRole(request.role());
         projectMemberRepository.save(member);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.example.project_management.feature.user.dto.UserResponse> getProjectMembers(Long projectId) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project", "id", projectId);
+        }
+        return projectMemberRepository.findByProjectId(projectId).stream()
+                .map(pm -> com.example.project_management.feature.user.dto.UserResponse.fromEntity(pm.getUser()))
+                .collect(Collectors.toList());
     }
 }

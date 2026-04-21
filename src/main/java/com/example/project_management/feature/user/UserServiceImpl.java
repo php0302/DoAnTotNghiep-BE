@@ -43,4 +43,14 @@ public class UserServiceImpl implements UserService {
                 .map(UserResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserRole(Long id, Role role) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+        
+        user.setRole(role);
+        return UserResponse.fromEntity(userRepository.save(user));
+    }
 }

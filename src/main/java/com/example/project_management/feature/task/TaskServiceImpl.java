@@ -57,6 +57,10 @@ public class TaskServiceImpl implements TaskService {
                 throw new InvalidRequestException("Assignee must be a member of the project");
             }
             task.setAssignedTo(assignee);
+            Task savedTask = taskRepository.save(task);
+            String msg = "Bạn vừa được giao task mới: '" + savedTask.getTitle() + "' trong dự án '" + project.getName() + "'";
+            notificationService.createNotification(assignee, msg);
+            return TaskResponse.fromEntity(savedTask);
         }
 
         return TaskResponse.fromEntity(taskRepository.save(task));
@@ -92,6 +96,18 @@ public class TaskServiceImpl implements TaskService {
     public void updateTaskStatus(Long taskId, TaskStatus status) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+
+        // Kiểm tra quyền: chỉ người được giao task hoặc ADMIN/PM mới được đổi trạng thái
+        boolean isPrivileged = isAdminOrManager();
+        if (!isPrivileged) {
+            Long currentUserId = SecurityUtil.getCurrentUserId().orElse(null);
+            Long assignedToId  = task.getAssignedTo() != null ? task.getAssignedTo().getId() : null;
+            if (!java.util.Objects.equals(currentUserId, assignedToId)) {
+                throw new com.example.project_management.exception.ForbiddenException(
+                        "Chỉ người được giao task mới có thể cập nhật trạng thái");
+            }
+        }
+
         task.setStatus(status);
         taskRepository.save(task);
     }
@@ -118,7 +134,7 @@ public class TaskServiceImpl implements TaskService {
         task.setAssignedTo(assignee);
         taskRepository.save(task);
         
-        String notificationMsg = "You have been assigned to task: '" + task.getTitle() + "'";
+        String notificationMsg = "Bạn vừa được giao task: '" + task.getTitle() + "' trong dự án '" + task.getProject().getName() + "'";
         notificationService.createNotification(assignee, notificationMsg);
     }
 
@@ -155,5 +171,14 @@ public class TaskServiceImpl implements TaskService {
             throw new ResourceNotFoundException("Task", "id", taskId);
         }
         taskRepository.deleteById(taskId);
+    }
+
+    /** Kiểm tra user hiện tại có role cao không */
+    private boolean isAdminOrManager() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_PROJECT_MANAGER"));
     }
 }

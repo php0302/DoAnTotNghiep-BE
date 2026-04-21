@@ -55,7 +55,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -67,5 +67,11 @@ public class ProjectController {
             @PathVariable Long id, @RequestBody @Valid ProjectMemberRequest request) {
         projectService.addMemberToProject(id, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(null));
+    }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.project_management.feature.user.dto.UserResponse>>> getProjectMembers(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(projectService.getProjectMembers(id)));
     }
 }
