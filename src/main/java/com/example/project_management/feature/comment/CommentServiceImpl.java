@@ -4,6 +4,7 @@ import com.example.project_management.exception.ResourceNotFoundException;
 import com.example.project_management.feature.comment.dto.CommentRequest;
 import com.example.project_management.feature.comment.dto.CommentResponse;
 import com.example.project_management.feature.notification.NotificationService;
+import com.example.project_management.feature.notification.NotificationType;
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.task.TaskRepository;
 import com.example.project_management.feature.user.User;
@@ -50,8 +51,14 @@ public class CommentServiceImpl implements CommentService {
 
         // Notify assigned user if the commenter is not the assignee
         if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(currentUser.getId())) {
-            String notificationMsg = currentUser.getUsername() + " commented on your task: '" + task.getTitle() + "'";
-            notificationService.createNotification(task.getAssignedTo(), notificationMsg);
+            String commenterName = currentUser.getUsername();
+            String notificationMsg = commenterName + " đã bình luận trong task: '" + task.getTitle() + "'";
+            notificationService.createAndPush(
+                    task.getAssignedTo(),
+                    notificationMsg,
+                    NotificationType.COMMENT_ADDED,
+                    task.getId()
+            );
         }
 
         return CommentResponse.fromEntity(savedComment);

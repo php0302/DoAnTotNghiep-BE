@@ -9,6 +9,7 @@ import com.example.project_management.feature.task.dto.TaskRequest;
 import com.example.project_management.feature.task.dto.TaskResponse;
 import com.example.project_management.feature.user.User;
 import com.example.project_management.feature.user.UserRepository;
+import com.example.project_management.feature.notification.NotificationType;
 import com.example.project_management.feature.notification.NotificationService;
 import com.example.project_management.security.SecurityUtil;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponse createTask(Long projectId, TaskRequest request) {
+        if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
+            throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
+        }
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
 
@@ -59,7 +64,7 @@ public class TaskServiceImpl implements TaskService {
             task.setAssignedTo(assignee);
             Task savedTask = taskRepository.save(task);
             String msg = "Bạn vừa được giao task mới: '" + savedTask.getTitle() + "' trong dự án '" + project.getName() + "'";
-            notificationService.createNotification(assignee, msg);
+            notificationService.createAndPush(assignee, msg, NotificationType.TASK_ASSIGNED, savedTask.getId());
             return TaskResponse.fromEntity(savedTask);
         }
 
@@ -69,6 +74,10 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request) {
+        if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
+            throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
+        }
+
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
@@ -83,7 +92,20 @@ public class TaskServiceImpl implements TaskService {
             if (!projectMemberRepository.existsByProjectIdAndUserId(task.getProject().getId(), assignee.getId())) {
                 throw new InvalidRequestException("Assignee must be a member of the project");
             }
+            // Thông báo nếu người được giao có thay đổi
+            boolean assigneeChanged = task.getAssignedTo() == null
+                    || !task.getAssignedTo().getId().equals(assignee.getId());
             task.setAssignedTo(assignee);
+            Task saved = taskRepository.save(task);
+            if (assigneeChanged) {
+                String msg = "Bạn vừa được giao task: '" + saved.getTitle() + "' trong dự án '" + saved.getProject().getName() + "'";
+                notificationService.createAndPush(assignee, msg, NotificationType.TASK_ASSIGNED, saved.getId());
+            } else if (request.deadline() != null && !request.deadline().equals(task.getDeadline())) {
+                // Deadline thay đổi
+                String msg = "Deadline task '" + saved.getTitle() + "' đã được cập nhật thành " + request.deadline();
+                notificationService.createAndPush(assignee, msg, NotificationType.DEADLINE_UPDATED, saved.getId());
+            }
+            return TaskResponse.fromEntity(saved);
         } else {
             task.setAssignedTo(null);
         }
@@ -133,9 +155,9 @@ public class TaskServiceImpl implements TaskService {
         }
         task.setAssignedTo(assignee);
         taskRepository.save(task);
-        
+
         String notificationMsg = "Bạn vừa được giao task: '" + task.getTitle() + "' trong dự án '" + task.getProject().getName() + "'";
-        notificationService.createNotification(assignee, notificationMsg);
+        notificationService.createAndPush(assignee, notificationMsg, NotificationType.TASK_ASSIGNED, task.getId());
     }
 
     @Override

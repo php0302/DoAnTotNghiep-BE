@@ -177,6 +177,18 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
+    @Transactional
+    public void removeMemberFromProject(Long projectId, Long userId) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project", "id", projectId);
+        }
+        if (!projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            throw new ResourceNotFoundException("ProjectMember", "userId", userId);
+        }
+        projectMemberRepository.deleteByProjectIdAndUserId(projectId, userId);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public java.util.List<com.example.project_management.feature.user.dto.UserResponse> getProjectMembers(Long projectId) {
         if (!projectRepository.existsById(projectId)) {

@@ -21,14 +21,23 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
+    /** Lấy tất cả notification của user hiện tại (dùng khi load lại trang) */
     @GetMapping
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyNotifications() {
         return ResponseEntity.ok(ApiResponse.success(notificationService.getMyNotifications()));
     }
 
+    /** Đánh dấu một notification đã đọc */
     @PatchMapping("/{id}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** Đánh dấu tất cả notification của user đã đọc */
+    @PatchMapping("/read-all")
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
+        notificationService.markAllAsRead();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

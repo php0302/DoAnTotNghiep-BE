@@ -13,5 +13,6 @@ public interface ProjectService {
     List<ProjectResponse> getAllProjects();
     void deleteProject(Long id);
     void addMemberToProject(Long projectId, ProjectMemberRequest request);
+    void removeMemberFromProject(Long projectId, Long userId);
     java.util.List<com.example.project_management.feature.user.dto.UserResponse> getProjectMembers(Long projectId);
 }

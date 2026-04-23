@@ -3,6 +3,8 @@ package com.example.project_management.feature.notification;
 import com.example.project_management.feature.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,6 +26,13 @@ public class Notification {
     @Column(nullable = false, length = 500)
     private String content;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private NotificationType type = NotificationType.GENERAL;
+
+    /** Optional: ID task liên quan để frontend navigate */
+    private Long taskId;
+
     private boolean isRead = false;
 
     @ManyToOne(optional = false)
@@ -40,6 +49,12 @@ public class Notification {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    public NotificationType getType() { return type; }
+    public void setType(NotificationType type) { this.type = type; }
+
+    public Long getTaskId() { return taskId; }
+    public void setTaskId(Long taskId) { this.taskId = taskId; }
 
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }

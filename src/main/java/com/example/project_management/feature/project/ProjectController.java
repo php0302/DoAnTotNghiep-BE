@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -73,5 +74,13 @@ public class ProjectController {
     public ResponseEntity<ApiResponse<java.util.List<com.example.project_management.feature.user.dto.UserResponse>>> getProjectMembers(
             @PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(projectService.getProjectMembers(id)));
+    }
+
+    @DeleteMapping("/{id}/members/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+    public ResponseEntity<ApiResponse<Void>> removeMemberFromProject(
+            @PathVariable Long id, @PathVariable Long userId) {
+        projectService.removeMemberFromProject(id, userId);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
