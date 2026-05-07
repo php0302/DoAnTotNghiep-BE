@@ -198,4 +198,21 @@ public class ProjectServiceImpl implements ProjectService {
                 .map(pm -> com.example.project_management.feature.user.dto.UserResponse.fromEntity(pm.getUser()))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.example.project_management.feature.user.dto.UserResponse> suggestMembers(Long projectId, String query) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project", "id", projectId);
+        }
+        String q = (query == null ? "" : query.toLowerCase().trim());
+        return projectMemberRepository.findByProjectId(projectId).stream()
+                .map(ProjectMember::getUser)
+                .filter(u -> q.isEmpty()
+                        || u.getUsername().toLowerCase().contains(q)
+                        || u.getFullName().toLowerCase().contains(q))
+                .limit(10)
+                .map(com.example.project_management.feature.user.dto.UserResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
 }

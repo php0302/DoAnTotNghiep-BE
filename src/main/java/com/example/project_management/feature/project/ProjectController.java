@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -82,5 +83,13 @@ public class ProjectController {
             @PathVariable Long id, @PathVariable Long userId) {
         projectService.removeMemberFromProject(id, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** Gợi ý member để @mention trong comment */
+    @GetMapping("/{id}/members/suggest")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.project_management.feature.user.dto.UserResponse>>> suggestMembers(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "") String q) {
+        return ResponseEntity.ok(ApiResponse.success(projectService.suggestMembers(id, q)));
     }
 }

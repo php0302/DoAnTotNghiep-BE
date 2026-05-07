@@ -74,6 +74,11 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request) {
+        if (!isAdminOrManager()) {
+            throw new com.example.project_management.exception.ForbiddenException(
+                    "Chỉ ADMIN và PROJECT_MANAGER mới có quyền sửa task");
+        }
+
         if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
             throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
         }
@@ -189,6 +194,11 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long taskId) {
+        if (!isAdminOrManager()) {
+            throw new com.example.project_management.exception.ForbiddenException(
+                    "Chỉ ADMIN và PROJECT_MANAGER mới có quyền xóa task");
+        }
+
         if (!taskRepository.existsById(taskId)) {
             throw new ResourceNotFoundException("Task", "id", taskId);
         }

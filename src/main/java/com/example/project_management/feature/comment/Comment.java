@@ -2,17 +2,22 @@ package com.example.project_management.feature.comment;
 
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.user.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "comments")
@@ -33,8 +38,15 @@ public class Comment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private java.util.List<CommentMention> mentions = new ArrayList<>();
+
     @CreationTimestamp
+    @Column(updatable = false)
     private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
 
     public Comment() {}
 
@@ -50,5 +62,9 @@ public class Comment {
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
 
+    public java.util.List<CommentMention> getMentions() { return mentions; }
+    public void setMentions(java.util.List<CommentMention> mentions) { this.mentions = mentions; }
+
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }

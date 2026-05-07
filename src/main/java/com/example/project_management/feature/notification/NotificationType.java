@@ -5,5 +5,6 @@ public enum NotificationType {
     DEADLINE_UPDATED,
     TASK_DELETED,
     COMMENT_ADDED,
+    MENTIONED,
     GENERAL
 }
