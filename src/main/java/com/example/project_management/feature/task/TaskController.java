@@ -1,13 +1,16 @@
 package com.example.project_management.feature.task;
 
 import com.example.project_management.dto.ApiResponse;
+import com.example.project_management.feature.task.dto.TaskPageResponse;
 import com.example.project_management.feature.task.dto.TaskRequest;
 import com.example.project_management.feature.task.dto.TaskResponse;
+import com.example.project_management.feature.task.dto.TaskSearchRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +31,34 @@ public class TaskController {
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
+
+    // ─── Search & Filter ────────────────────────────────────────────────────────
+    /**
+     * GET /api/v1/tasks/search
+     *
+     * Query params (tất cả đều optional):
+     *   keyword    - tìm kiếm theo tên task (contains, case-insensitive)
+     *   status     - TODO | IN_PROGRESS | DONE
+     *   priority   - LOW | MEDIUM | HIGH
+     *   assigneeId - ID của user được assign
+     *   projectId  - ID của project
+     *   startDate  - deadline >= startDate  (format: yyyy-MM-dd)
+     *   endDate    - deadline <= endDate    (format: yyyy-MM-dd)
+     *   overdue    - true = chỉ lấy task quá hạn
+     *   page       - số trang (0-based, mặc định 0)
+     *   size       - số item/trang (mặc định 20, tối đa 100)
+     *   sortBy     - deadline | priority | createdAt | status | title
+     *   sortDir    - ASC | DESC
+     *
+     * Ví dụ: GET /api/v1/tasks/search?keyword=UI&status=IN_PROGRESS&page=0&size=10&sortBy=deadline&sortDir=ASC
+     */
+    @GetMapping("/tasks/search")
+    public ResponseEntity<ApiResponse<TaskPageResponse>> searchTasks(
+            @ModelAttribute TaskSearchRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.searchTasks(request)));
+    }
+
+    // ─── CRUD ──────────────────────────────────────────────────────────────────
 
     @PostMapping("/projects/{projectId}/tasks")
     public ResponseEntity<ApiResponse<TaskResponse>> createTask(

@@ -1,7 +1,9 @@
 package com.example.project_management.feature.task;
 
+import com.example.project_management.feature.task.dto.TaskPageResponse;
 import com.example.project_management.feature.task.dto.TaskRequest;
 import com.example.project_management.feature.task.dto.TaskResponse;
+import com.example.project_management.feature.task.dto.TaskSearchRequest;
 
 import java.util.List;
 
@@ -15,4 +17,10 @@ public interface TaskService {
     List<TaskResponse> getTasksByProjectId(Long projectId);
     List<TaskResponse> getMyTasks();
     void deleteTask(Long taskId);
+
+    /**
+     * Tìm kiếm & filter task nâng cao với phân trang.
+     * Kết quả chỉ bao gồm task thuộc project mà user là thành viên.
+     */
+    TaskPageResponse searchTasks(TaskSearchRequest request);
 }

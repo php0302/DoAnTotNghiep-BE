@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
     List<ProjectMember> findByProjectId(Long projectId);
+    List<ProjectMember> findByUserId(Long userId);
     boolean existsByProjectIdAndUserId(Long projectId, Long userId);
     void deleteByProjectId(Long projectId);
     void deleteByProjectIdAndUserId(Long projectId, Long userId);

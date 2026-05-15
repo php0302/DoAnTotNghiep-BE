@@ -16,6 +16,7 @@ public record TaskResponse(
         Long projectId,
         String projectName,
         Long assignedToId,
+        String assignedToName,
         Instant createdAt
 ) {
     public static TaskResponse fromEntity(Task task) {
@@ -29,6 +30,7 @@ public record TaskResponse(
                 task.getProject().getId(),
                 task.getProject().getName(),
                 task.getAssignedTo() != null ? task.getAssignedTo().getId() : null,
+                task.getAssignedTo() != null ? task.getAssignedTo().getFullName() : null,
                 task.getCreatedAt()
         );
     }

@@ -6,5 +6,7 @@ public enum NotificationType {
     TASK_DELETED,
     COMMENT_ADDED,
     MENTIONED,
+    PROJECT_ASSIGNED,
+    PROJECT_DELETED,
     GENERAL
 }

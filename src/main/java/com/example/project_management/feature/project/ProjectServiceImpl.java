@@ -10,6 +10,8 @@ import com.example.project_management.feature.user.UserRepository;
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.task.TaskRepository;
 import com.example.project_management.feature.comment.CommentRepository;
+import com.example.project_management.feature.notification.NotificationService;
+import com.example.project_management.feature.notification.NotificationType;
 import com.example.project_management.security.SecurityUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,17 +27,20 @@ public class ProjectServiceImpl implements ProjectService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
+    private final NotificationService notificationService;
 
     public ProjectServiceImpl(ProjectRepository projectRepository,
                               ProjectMemberRepository projectMemberRepository,
                               UserRepository userRepository,
                               TaskRepository taskRepository,
-                              CommentRepository commentRepository) {
+                              CommentRepository commentRepository,
+                              NotificationService notificationService) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userRepository = userRepository;
         this.taskRepository = taskRepository;
         this.commentRepository = commentRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -138,9 +143,11 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void deleteProject(Long id) {
-        if (!projectRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Project", "id", id);
-        }
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
+
+        // Lấy danh sách thành viên để thông báo
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(id);
         
         // 1. Delete all comments inside tasks of this project
         // 2. Delete the tasks
@@ -155,6 +162,15 @@ public class ProjectServiceImpl implements ProjectService {
 
         // 4. Finally delete the project
         projectRepository.deleteById(id);
+
+        // 5. Gửi thông báo xoá dự án đến các thành viên (ngoại trừ người đang thực hiện xoá)
+        Long currentUserId = SecurityUtil.getCurrentUserId().orElse(null);
+        for (ProjectMember pm : members) {
+            if (!pm.getUser().getId().equals(currentUserId)) {
+                String msg = "Dự án '" + project.getName() + "' đã bị xoá bởi Quản trị viên.";
+                notificationService.createAndPush(pm.getUser(), msg, NotificationType.PROJECT_DELETED, id);
+            }
+        }
     }
 
     @Override
@@ -174,6 +190,10 @@ public class ProjectServiceImpl implements ProjectService {
         member.setUser(user);
         member.setRole(request.role());
         projectMemberRepository.save(member);
+
+        // Notify user about being added to the project
+        String msg = "Bạn đã được thêm vào dự án: " + project.getName();
+        notificationService.createAndPush(user, msg, NotificationType.PROJECT_ASSIGNED, projectId);
     }
 
     @Override

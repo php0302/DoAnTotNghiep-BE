@@ -8,6 +8,8 @@ import com.example.project_management.feature.comment.dto.CommentResponse;
 import com.example.project_management.feature.notification.NotificationService;
 import com.example.project_management.feature.notification.NotificationType;
 import com.example.project_management.feature.project.ProjectMemberRepository;
+import com.example.project_management.feature.realtime.RealtimeMessage;
+import com.example.project_management.feature.realtime.WebSocketBroadcastService;
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.task.TaskRepository;
 import com.example.project_management.feature.user.User;
@@ -31,19 +33,22 @@ public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final NotificationService notificationService;
+    private final WebSocketBroadcastService broadcastService;
 
     public CommentServiceImpl(CommentRepository commentRepository,
                               CommentMentionRepository commentMentionRepository,
                               TaskRepository taskRepository,
                               UserRepository userRepository,
                               ProjectMemberRepository projectMemberRepository,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              WebSocketBroadcastService broadcastService) {
         this.commentRepository = commentRepository;
         this.commentMentionRepository = commentMentionRepository;
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.notificationService = notificationService;
+        this.broadcastService = broadcastService;
     }
 
     @Override
@@ -85,7 +90,16 @@ public class CommentServiceImpl implements CommentService {
                     NotificationType.COMMENT_ADDED, task.getId());
         }
 
-        return CommentResponse.fromEntity(saved);
+        CommentResponse commentResponse = CommentResponse.fromEntity(saved);
+
+        // Broadcast COMMENT_CREATED to all project members viewing this project
+        Long projectId = task.getProject().getId();
+        Long actorId = SecurityUtil.getCurrentUserId().orElse(null);
+        String actorName = author.getFullName();
+        broadcastService.broadcastToProject(projectId,
+                RealtimeMessage.of("COMMENT_CREATED", projectId, actorId, actorName, commentResponse));
+
+        return commentResponse;
     }
 
     @Override
