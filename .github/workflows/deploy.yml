@@ -13,11 +13,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
 
       - name: Grant execute permission for Maven Wrapper
@@ -48,10 +48,13 @@ jobs:
           port: ${{ secrets.EC2_PORT }}
           script: |
             APP_DIR=/home/ubuntu/taskmaster-backend
-            mkdir -p $APP_DIR/logs $APP_DIR/uploads
+
+            mkdir -p $APP_DIR/logs
+            mkdir -p $APP_DIR/uploads
 
             cat > $APP_DIR/run.sh << 'EOF'
             #!/bin/bash
+
             set -e
 
             APP_DIR=/home/ubuntu/taskmaster-backend
@@ -62,19 +65,28 @@ jobs:
             mkdir -p $APP_DIR/uploads
 
             echo "Loading env..."
-            export $(grep -v '^#' $APP_DIR/.env | xargs)
+
+            set -a
+            source $APP_DIR/.env
+            set +a
 
             echo "Stopping old app..."
+
             pkill -f "app.jar" || true
-            sleep 2
+
+            sleep 3
 
             echo "Starting new app..."
-            nohup java -jar $JAR_FILE \
+
+            nohup java \
               -Dspring.profiles.active=prod \
+              -jar $JAR_FILE \
               > $LOG_FILE 2>&1 &
 
-            echo "Done! PID=$!"
+            echo "Application started!"
+            echo "PID=$!"
             EOF
 
             chmod +x $APP_DIR/run.sh
+
             $APP_DIR/run.sh
