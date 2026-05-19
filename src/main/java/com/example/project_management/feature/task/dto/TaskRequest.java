@@ -14,5 +14,7 @@ public record TaskRequest(
         
         LocalDate deadline,
         
-        Long assignedToId
+        Long assignedToId,
+
+        Double estimatedHours
 ) {}

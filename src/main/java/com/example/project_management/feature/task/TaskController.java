@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -61,6 +62,7 @@ public class TaskController {
     // ─── CRUD ──────────────────────────────────────────────────────────────────
 
     @PostMapping("/projects/{projectId}/tasks")
+    @PreAuthorize("hasAuthority('CREATE_TASK') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<TaskResponse>> createTask(
             @PathVariable Long projectId, @RequestBody @Valid TaskRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -83,6 +85,7 @@ public class TaskController {
     }
 
     @PutMapping("/tasks/{taskId}")
+    @PreAuthorize("hasAuthority('EDIT_TASK') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<TaskResponse>> updateTask(
             @PathVariable Long taskId, @RequestBody @Valid TaskRequest request) {
         return ResponseEntity.ok(ApiResponse.success(taskService.updateTask(taskId, request)));
@@ -96,6 +99,7 @@ public class TaskController {
     }
 
     @PatchMapping("/tasks/{taskId}/assign")
+    @PreAuthorize("hasAuthority('ASSIGN_TASK') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> assignTask(
             @PathVariable Long taskId, @RequestParam Long userId) {
         taskService.assignTask(taskId, userId);
@@ -103,6 +107,7 @@ public class TaskController {
     }
 
     @DeleteMapping("/tasks/{taskId}")
+    @PreAuthorize("hasAuthority('DELETE_TASK') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable Long taskId) {
         taskService.deleteTask(taskId);
         return ResponseEntity.ok(ApiResponse.success(null));

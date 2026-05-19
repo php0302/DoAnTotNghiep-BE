@@ -13,6 +13,7 @@ public record TaskResponse(
         TaskStatus status,
         TaskPriority priority,
         LocalDate deadline,
+        Double estimatedHours,
         Long projectId,
         String projectName,
         Long assignedToId,
@@ -27,6 +28,7 @@ public record TaskResponse(
                 task.getStatus(),
                 task.getPriority(),
                 task.getDeadline(),
+                task.getEstimatedHours(),
                 task.getProject().getId(),
                 task.getProject().getName(),
                 task.getAssignedTo() != null ? task.getAssignedTo().getId() : null,
@@ -35,3 +37,4 @@ public record TaskResponse(
         );
     }
 }
+

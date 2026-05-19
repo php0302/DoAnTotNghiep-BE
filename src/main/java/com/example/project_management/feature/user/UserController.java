@@ -3,6 +3,7 @@ package com.example.project_management.feature.user;
 import com.example.project_management.dto.ApiResponse;
 import com.example.project_management.feature.user.dto.UserResponse;
 import com.example.project_management.feature.user.dto.UserRoleRequest;
+import com.example.project_management.feature.user.dto.UpdateProfileRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,5 +44,19 @@ public class UserController {
             @PathVariable Long id,
             @RequestBody @Valid UserRoleRequest request) {
         return ResponseEntity.ok(ApiResponse.success(userService.updateUserRole(id, request.roleId())));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            @RequestBody @Valid UpdateProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateMyProfile(request)));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUserProfile(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(userService.updateUserProfile(id, request)));
     }
 }

@@ -42,6 +42,8 @@ public class Task {
 
     private LocalDate deadline;
 
+    private Double estimatedHours;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
@@ -75,6 +77,9 @@ public class Task {
 
     public LocalDate getDeadline() { return deadline; }
     public void setDeadline(LocalDate deadline) { this.deadline = deadline; }
+
+    public Double getEstimatedHours() { return estimatedHours; }
+    public void setEstimatedHours(Double estimatedHours) { this.estimatedHours = estimatedHours; }
 
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }

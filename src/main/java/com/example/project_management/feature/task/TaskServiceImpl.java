@@ -68,6 +68,7 @@ public class TaskServiceImpl implements TaskService {
         task.setPriority(request.priority() != null ? request.priority() : TaskPriority.MEDIUM);
         task.setDeadline(request.deadline());
         task.setProject(project);
+        if (request.estimatedHours() != null) task.setEstimatedHours(request.estimatedHours());
 
         if (request.assignedToId() != null) {
             User assignee = userRepository.findById(request.assignedToId())
@@ -101,11 +102,6 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request) {
-        if (!isAdminOrManager()) {
-            throw new com.example.project_management.exception.ForbiddenException(
-                    "Chỉ ADMIN và PROJECT_MANAGER mới có quyền sửa task");
-        }
-
         if (request.deadline() != null && request.deadline().isBefore(java.time.LocalDate.now())) {
             throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
         }
@@ -117,6 +113,7 @@ public class TaskServiceImpl implements TaskService {
         task.setDescription(request.description());
         if (request.priority() != null) task.setPriority(request.priority());
         task.setDeadline(request.deadline());
+        if (request.estimatedHours() != null) task.setEstimatedHours(request.estimatedHours());
 
         Long actorId = SecurityUtil.getCurrentUserId().orElse(null);
         String actorName = SecurityUtil.getCurrentUserEmail().orElse("unknown");
@@ -314,11 +311,6 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long taskId) {
-        if (!isAdminOrManager()) {
-            throw new com.example.project_management.exception.ForbiddenException(
-                    "Chỉ ADMIN và PROJECT_MANAGER mới có quyền xóa task");
-        }
-
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
         Long projectId = task.getProject().getId();
