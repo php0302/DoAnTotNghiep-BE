@@ -15,6 +15,7 @@ public record UserResponse(
         String role,        // Tên role (VD: "ADMIN", "PROJECT_MANAGER")
         Set<Permission> permissions,
         boolean isActive,
+        boolean mustChangePassword,
         Instant createdAt
 ) {
     public static UserResponse fromEntity(User user) {
@@ -27,6 +28,7 @@ public record UserResponse(
                 user.getRole() != null ? user.getRole().getName() : null,
                 user.getRole() != null ? user.getRole().getPermissions() : Set.of(),
                 user.isActive(),
+                user.isMustChangePassword(),
                 user.getCreatedAt()
         );
     }

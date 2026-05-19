@@ -8,5 +8,7 @@ public enum NotificationType {
     MENTIONED,
     PROJECT_ASSIGNED,
     PROJECT_DELETED,
+    PASSWORD_CHANGED,
+    USER_DEACTIVATED,
     GENERAL
 }

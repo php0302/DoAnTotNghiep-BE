@@ -17,6 +17,9 @@ public class WebSocketBroadcastService {
     /** Prefix topic cho project — client subscribe: /topic/project.{id} */
     private static final String PROJECT_TOPIC_PREFIX = "/topic/project.";
 
+    /** Topic chung cho Admin — client subscribe: /topic/admin */
+    private static final String ADMIN_TOPIC = "/topic/admin";
+
     private final SimpMessagingTemplate messagingTemplate;
 
     public WebSocketBroadcastService(SimpMessagingTemplate messagingTemplate) {
@@ -35,8 +38,22 @@ public class WebSocketBroadcastService {
             messagingTemplate.convertAndSend(destination, message);
             log.debug("[WS Broadcast] {} → {} (actor={})", message.type(), destination, message.actorId());
         } catch (Exception e) {
-            // Không ảnh hưởng luồng chính — chỉ log
             log.warn("[WS Broadcast] Failed to send to {}: {}", destination, e.getMessage());
+        }
+    }
+
+    /**
+     * Broadcast message tới tất cả Admin đang subscribe /topic/admin.
+     * Dùng cho các sự kiện quản trị: user đổi mật khẩu, v.v.
+     *
+     * @param message Payload (RealtimeMessage)
+     */
+    public void broadcastToAdmins(RealtimeMessage message) {
+        try {
+            messagingTemplate.convertAndSend(ADMIN_TOPIC, message);
+            log.debug("[WS Broadcast] {} → {} (actor={})", message.type(), ADMIN_TOPIC, message.actorId());
+        } catch (Exception e) {
+            log.warn("[WS Broadcast] Failed to send to {}: {}", ADMIN_TOPIC, e.getMessage());
         }
     }
 }

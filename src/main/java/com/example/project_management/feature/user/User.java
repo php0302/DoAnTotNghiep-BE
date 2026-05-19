@@ -37,6 +37,9 @@ public class User {
 
     private boolean isActive = true;
 
+    @Column(nullable = false)
+    private boolean mustChangePassword = false;
+
     @CreationTimestamp
     private Instant createdAt;
 
@@ -65,6 +68,9 @@ public class User {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public boolean isMustChangePassword() { return mustChangePassword; }
+    public void setMustChangePassword(boolean mustChangePassword) { this.mustChangePassword = mustChangePassword; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
