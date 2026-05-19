@@ -1,15 +1,19 @@
 package com.example.project_management.feature.user.dto;
 
-import com.example.project_management.feature.user.Role;
+import com.example.project_management.feature.role.Permission;
 import com.example.project_management.feature.user.User;
 
 import java.time.Instant;
+import java.util.Set;
 
 public record UserResponse(
         Long id,
         String username,
+        String fullName,
         String email,
-        Role role,
+        Long roleId,
+        String role,        // Tên role (VD: "ADMIN", "PROJECT_MANAGER")
+        Set<Permission> permissions,
         boolean isActive,
         Instant createdAt
 ) {
@@ -17,8 +21,11 @@ public record UserResponse(
         return new UserResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getFullName(),
                 user.getEmail(),
-                user.getRole(),
+                user.getRole() != null ? user.getRole().getId() : null,
+                user.getRole() != null ? user.getRole().getName() : null,
+                user.getRole() != null ? user.getRole().getPermissions() : Set.of(),
                 user.isActive(),
                 user.getCreatedAt()
         );

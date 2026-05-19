@@ -1,13 +1,7 @@
 package com.example.project_management.feature.user;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.example.project_management.feature.role.RoleEntity;
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -33,9 +27,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private Role role = Role.MEMBER;
+    /**
+     * Chức vụ của người dùng — quan hệ nhiều User thuộc một RoleEntity.
+     * Mặc định là null, sẽ được gán khi DataInitializer khởi tạo dữ liệu ban đầu.
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    private RoleEntity role;
 
     private boolean isActive = true;
 
@@ -62,8 +60,8 @@ public class User {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    public RoleEntity getRole() { return role; }
+    public void setRole(RoleEntity role) { this.role = role; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }

@@ -69,7 +69,7 @@ public class ProjectServiceImpl implements ProjectService {
         ProjectMember member = new ProjectMember();
         member.setProject(savedProject);
         member.setUser(currentUser);
-        member.setRole(com.example.project_management.feature.user.Role.PROJECT_MANAGER);
+        member.setRole(ProjectRole.PROJECT_MANAGER);
         projectMemberRepository.save(member);
 
         return ProjectResponse.fromEntity(savedProject);

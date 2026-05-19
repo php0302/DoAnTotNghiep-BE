@@ -8,5 +8,5 @@ public interface UserService {
     UserResponse getCurrentUser();
     UserResponse getUserById(Long id);
     List<UserResponse> getAllUsers();
-    UserResponse updateUserRole(Long id, Role role);
+    UserResponse updateUserRole(Long userId, Long roleId);
 }

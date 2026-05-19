@@ -1,6 +1,6 @@
 package com.example.project_management.feature.project.dto;
 
-import com.example.project_management.feature.user.Role;
+import com.example.project_management.feature.project.ProjectRole;
 import jakarta.validation.constraints.NotNull;
 
 public record ProjectMemberRequest(
@@ -8,5 +8,6 @@ public record ProjectMemberRequest(
         Long userId,
 
         @NotNull(message = "Role is required")
-        Role role
+        ProjectRole role
 ) {}
+

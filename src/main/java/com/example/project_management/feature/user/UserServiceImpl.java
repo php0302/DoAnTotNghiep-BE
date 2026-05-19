@@ -1,6 +1,8 @@
 package com.example.project_management.feature.user;
 
 import com.example.project_management.exception.ResourceNotFoundException;
+import com.example.project_management.feature.role.RoleEntity;
+import com.example.project_management.feature.role.RoleRepository;
 import com.example.project_management.feature.user.dto.UserResponse;
 import com.example.project_management.security.SecurityUtil;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,11 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -46,10 +50,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponse updateUserRole(Long id, Role role) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        
+    public UserResponse updateUserRole(Long userId, Long roleId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        RoleEntity role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Chức vụ", "id", roleId));
         user.setRole(role);
         return UserResponse.fromEntity(userRepository.save(user));
     }

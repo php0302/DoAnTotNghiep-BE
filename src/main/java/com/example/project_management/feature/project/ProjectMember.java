@@ -1,6 +1,5 @@
 package com.example.project_management.feature.project;
 
-import com.example.project_management.feature.user.Role;
 import com.example.project_management.feature.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -34,7 +33,7 @@ public class ProjectMember {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role;
+    private ProjectRole role;
 
     @CreationTimestamp
     private Instant joinedAt;
@@ -50,8 +49,8 @@ public class ProjectMember {
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    public ProjectRole getRole() { return role; }
+    public void setRole(ProjectRole role) { this.role = role; }
 
     public Instant getJoinedAt() { return joinedAt; }
 }
