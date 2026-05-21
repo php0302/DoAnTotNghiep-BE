@@ -1,6 +1,7 @@
 package com.example.project_management.feature.worklog;
 
 import com.example.project_management.exception.ForbiddenException;
+import com.example.project_management.exception.InvalidRequestException;
 import com.example.project_management.exception.ResourceNotFoundException;
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.task.TaskRepository;
@@ -50,6 +51,14 @@ public class WorkLogServiceImpl implements WorkLogService {
 
         User user = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", currentUserId));
+
+        if (task.getAssignedTo() == null || !task.getAssignedTo().getId().equals(currentUserId)) {
+            throw new ForbiddenException("Chỉ người được giao công việc này mới có thể báo cáo thời gian làm.");
+        }
+
+        if (request.logDate() != null && !request.logDate().equals(LocalDate.now())) {
+            throw new InvalidRequestException("Chỉ được phép ghi nhận thời gian cho ngày hôm nay");
+        }
 
         WorkLog log = new WorkLog();
         log.setTask(task);
