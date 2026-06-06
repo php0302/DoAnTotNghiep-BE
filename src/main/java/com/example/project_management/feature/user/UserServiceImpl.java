@@ -4,6 +4,7 @@ import com.example.project_management.exception.InvalidRequestException;
 import com.example.project_management.exception.ResourceNotFoundException;
 import com.example.project_management.feature.role.RoleEntity;
 import com.example.project_management.feature.role.RoleRepository;
+import com.example.project_management.feature.user.dto.AdminResetPasswordRequest;
 import com.example.project_management.feature.user.dto.ChangePasswordRequest;
 import com.example.project_management.feature.user.dto.CreateUserRequest;
 import com.example.project_management.feature.user.dto.UpdateProfileRequest;
@@ -143,6 +144,39 @@ public class UserServiceImpl implements UserService {
                 user.getId(),
                 user.getFullName(),
                 java.util.Map.of("userId", user.getId(), "mustChangePassword", false)
+            )
+        );
+    }
+
+    @Override
+    @Transactional
+    public void resetUserPassword(Long userId, AdminResetPasswordRequest request) {
+        // Kiểm tra tài khoản tồn tại
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        // Kiểm tra admin không tự reset chính mình qua endpoint này
+        String currentEmail = SecurityUtil.getCurrentUserEmail().orElse("");
+        if (user.getEmail().equalsIgnoreCase(currentEmail)) {
+            throw new InvalidRequestException("Hãy dùng chức năng đổi mật khẩu cá nhân thay thế!");
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setMustChangePassword(request.forceChangeOnLogin());
+        userRepository.save(user);
+
+        // Broadcast cho admin khác đang online
+        broadcastService.broadcastToAdmins(
+            RealtimeMessage.of(
+                "PASSWORD_RESET_BY_ADMIN",
+                null,
+                user.getId(),
+                user.getFullName(),
+                java.util.Map.of(
+                    "userId", user.getId(),
+                    "mustChangePassword", request.forceChangeOnLogin()
+                )
             )
         );
     }

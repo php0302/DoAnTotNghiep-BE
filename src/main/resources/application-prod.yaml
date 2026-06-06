@@ -22,3 +22,17 @@ jwt:
 
 server:
   port: 8080
+
+# File Upload Configuration (Production uses S3)
+file:
+  storage:
+    type: s3
+
+# AWS S3 Production Configuration
+aws:
+  credentials:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET}
+    region: ${AWS_REGION}

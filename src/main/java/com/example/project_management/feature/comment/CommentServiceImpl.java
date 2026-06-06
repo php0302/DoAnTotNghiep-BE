@@ -69,8 +69,12 @@ public class CommentServiceImpl implements CommentService {
             throw new ForbiddenException("Bạn không phải thành viên của dự án này");
         }
 
-        String content = request.content().trim();
-        if (content.isEmpty()) throw new InvalidRequestException("Nội dung comment không được rỗng");
+        String content = request.content() != null ? request.content().trim() : "";
+        // Cho phép comment chỉ chứa ảnh (content là zero-width space '\u200b')
+        boolean isImageOnlyComment = content.equals("\u200b") || content.isBlank();
+        if (isImageOnlyComment) {
+            content = ""; // Lưu rỗng vào DB, frontend sẽ hiển thị ảnh
+        }
         if (content.length() > 1000) throw new InvalidRequestException("Comment tối đa 1000 ký tự");
 
         Comment comment = new Comment();

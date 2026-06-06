@@ -1,5 +1,6 @@
 package com.example.project_management.feature.user;
 
+import com.example.project_management.feature.user.dto.AdminResetPasswordRequest;
 import com.example.project_management.feature.user.dto.ChangePasswordRequest;
 import com.example.project_management.feature.user.dto.CreateUserRequest;
 import com.example.project_management.feature.user.dto.UpdateProfileRequest;
@@ -20,6 +21,9 @@ public interface UserService {
 
     /** Nhân viên đổi mật khẩu (kể cả lần đầu bắt buộc) */
     void changePassword(ChangePasswordRequest request);
+
+    /** Admin đặt lại mật khẩu cho người dùng khác không cần mật khẩu cũ */
+    void resetUserPassword(Long userId, AdminResetPasswordRequest request);
 
     /** Admin xóa (vô hiệu hóa) tài khoản nhân viên */
     void deleteUser(Long id);

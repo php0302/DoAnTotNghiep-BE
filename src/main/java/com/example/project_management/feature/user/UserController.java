@@ -1,6 +1,7 @@
 package com.example.project_management.feature.user;
 
 import com.example.project_management.dto.ApiResponse;
+import com.example.project_management.feature.user.dto.AdminResetPasswordRequest;
 import com.example.project_management.feature.user.dto.ChangePasswordRequest;
 import com.example.project_management.feature.user.dto.CreateUserRequest;
 import com.example.project_management.feature.user.dto.UserResponse;
@@ -77,6 +78,16 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @RequestBody @Valid ChangePasswordRequest request) {
         userService.changePassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** Admin đặt lại mật khẩu cho người dùng khác không cần mật khẩu cũ */
+    @PutMapping("/{id}/reset-password")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> resetUserPassword(
+            @PathVariable Long id,
+            @RequestBody @Valid AdminResetPasswordRequest request) {
+        userService.resetUserPassword(id, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

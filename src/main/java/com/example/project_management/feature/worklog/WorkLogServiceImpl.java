@@ -87,21 +87,11 @@ public class WorkLogServiceImpl implements WorkLogService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "context", "current user"));
 
         boolean isPrivileged = isAdminOrManager();
+        if (!isPrivileged) {
+            throw new ForbiddenException("Chỉ Admin và Project Manager mới có quyền xem báo cáo thời gian.");
+        }
         
         java.util.Set<Long> allowedProjectIds = null;
-        if (!isPrivileged) {
-            allowedProjectIds = projectMemberRepository.findByUserId(currentUserId).stream()
-                    .map(pm -> pm.getProject().getId())
-                    .collect(java.util.stream.Collectors.toSet());
-            
-            if (projectId != null && !allowedProjectIds.contains(projectId)) {
-                throw new ForbiddenException("Bạn không có quyền xem báo cáo của dự án này");
-            }
-            if (targetUserId != null && !targetUserId.equals(currentUserId)) {
-                // Member chỉ được xem log của chính mình
-                throw new ForbiddenException("Bạn không có quyền xem báo cáo của người khác");
-            }
-        }
 
         LocalDate from = startDate != null ? startDate : LocalDate.now();
         LocalDate to   = endDate   != null ? endDate   : LocalDate.now();

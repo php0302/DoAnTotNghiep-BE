@@ -6,6 +6,7 @@ import com.example.project_management.feature.worklog.dto.WorkLogResponse;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ public class WorkLogController {
      * Lấy báo cáo hằng ngày. userId là tuỳ chọn (Admin có thể xem của người khác).
      */
     @GetMapping("/report")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<DailyReportResponse> getDailyReport(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Long projectId,
