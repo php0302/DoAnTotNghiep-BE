@@ -31,19 +31,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 1. Native WebSocket — dùng cho @stomp/stompjs brokerURL (ws://...)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(
-                        "http://localhost:5173",
-                        "http://localhost:3000",
-                        "http://127.0.0.1:5173"
-                );
+                .setAllowedOriginPatterns("*");
 
         // 2. SockJS fallback — cho browser cũ hoặc SockJS client
         registry.addEndpoint("/ws-sockjs")
-                .setAllowedOriginPatterns(
-                        "http://localhost:5173",
-                        "http://localhost:3000",
-                        "http://127.0.0.1:5173"
-                )
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
     }
 
