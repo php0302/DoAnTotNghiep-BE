@@ -38,17 +38,20 @@ public class TaskServiceImpl implements TaskService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final WebSocketBroadcastService broadcastService;
+    private final TaskStatusHistoryRepository taskStatusHistoryRepository;
 
     public TaskServiceImpl(TaskRepository taskRepository, ProjectRepository projectRepository,
                            ProjectMemberRepository projectMemberRepository, UserRepository userRepository,
                            NotificationService notificationService,
-                           WebSocketBroadcastService broadcastService) {
+                           WebSocketBroadcastService broadcastService,
+                           TaskStatusHistoryRepository taskStatusHistoryRepository) {
         this.taskRepository = taskRepository;
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.broadcastService = broadcastService;
+        this.taskStatusHistoryRepository = taskStatusHistoryRepository;
     }
 
     @Override
@@ -171,8 +174,24 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
+        // Validate workflow transition
+        TaskStatus oldStatus = task.getStatus();
+        if (!TaskStatus.isValidTransition(oldStatus, status)) {
+            throw new InvalidRequestException(
+                    "Chuyển trạng thái từ " + oldStatus + " sang " + status + " không hợp lệ");
+        }
+
         task.setStatus(status);
         Task saved = taskRepository.save(task);
+
+        // Ghi log lịch sử đổi trạng thái
+        Long currentUserId = SecurityUtil.getCurrentUserId().orElse(null);
+        User changedBy = null;
+        if (currentUserId != null) {
+            changedBy = userRepository.findById(currentUserId).orElse(null);
+        }
+        TaskStatusHistory history = new TaskStatusHistory(saved, oldStatus, status, changedBy);
+        taskStatusHistoryRepository.save(history);
 
         // Broadcast TASK_STATUS_CHANGED to all project members
         Long actorId = SecurityUtil.getCurrentUserId().orElse(null);

@@ -91,12 +91,7 @@ public class TaskController {
         return ResponseEntity.ok(ApiResponse.success(taskService.updateTask(taskId, request)));
     }
 
-    @PatchMapping("/tasks/{taskId}/status")
-    public ResponseEntity<ApiResponse<Void>> updateTaskStatus(
-            @PathVariable Long taskId, @RequestParam TaskStatus status) {
-        taskService.updateTaskStatus(taskId, status);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
+
 
     @PatchMapping("/tasks/{taskId}/assign")
     @PreAuthorize("hasAuthority('ASSIGN_TASK') or hasRole('ADMIN')")

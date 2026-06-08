@@ -82,7 +82,10 @@ public class DashboardServiceImpl implements DashboardService {
         Map<String, Long> distribution = new HashMap<>();
         distribution.put("TODO", 0L);
         distribution.put("IN_PROGRESS", 0L);
+        distribution.put("IN_REVIEW", 0L);
+        distribution.put("TESTING", 0L);
         distribution.put("DONE", 0L);
+        distribution.put("BLOCKED", 0L);
 
         List<Object[]> rows = projectId != null
                 ? taskRepository.countTasksByStatusForProject(projectId)
