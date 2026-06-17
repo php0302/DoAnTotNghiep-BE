@@ -61,7 +61,7 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
         }
 
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
 
         Task task = new Task();
@@ -109,7 +109,7 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidRequestException("Deadline không được chọn trong quá khứ");
         }
 
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         task.setTitle(request.title());
@@ -160,7 +160,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void updateTaskStatus(Long taskId, TaskStatus status) {
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
         // Kiểm tra quyền: chỉ người được giao task hoặc ADMIN/PM mới được đổi trạng thái
@@ -178,7 +178,18 @@ public class TaskServiceImpl implements TaskService {
         TaskStatus oldStatus = task.getStatus();
         if (!TaskStatus.isValidTransition(oldStatus, status)) {
             throw new InvalidRequestException(
-                    "Chuyển trạng thái từ " + oldStatus + " sang " + status + " không hợp lệ");
+                    "Chuyển trạng thái từ " + oldStatus.getDisplayName() + " sang " + status.getDisplayName() + " không hợp lệ");
+        }
+
+        // Kiểm tra chuyển đổi trạng thái đặc thù theo yêu cầu phân quyền:
+        // - Từ IN_REVIEW sang TESTING: chỉ PM/Admin mới được phép kéo
+        // - Từ TESTING sang DONE: chỉ PM/Admin mới được phép kéo
+        if ((oldStatus == TaskStatus.IN_REVIEW && status == TaskStatus.TESTING) ||
+            (oldStatus == TaskStatus.TESTING && status == TaskStatus.DONE)) {
+            if (!isPrivileged) {
+                throw new com.example.project_management.exception.ForbiddenException(
+                        "Chỉ Quản lý dự án (PM) hoặc Quản trị viên mới được phép chuyển sang trạng thái " + status.getDisplayName());
+            }
         }
 
         task.setStatus(status);
@@ -204,7 +215,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void updateTaskPriority(Long taskId, TaskPriority priority) {
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
         task.setPriority(priority);
         taskRepository.save(task);
@@ -213,7 +224,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void assignTask(Long taskId, Long userId) {
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
         User assignee = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -230,7 +241,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long taskId) {
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
         return TaskResponse.fromEntity(task);
     }
@@ -238,7 +249,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public List<TaskResponse> getTasksByProjectId(Long projectId) {
-        return taskRepository.findByProjectId(projectId).stream()
+        return taskRepository.findByProjectIdAndProjectIsDeletedFalse(projectId).stream()
                 .map(TaskResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -248,7 +259,7 @@ public class TaskServiceImpl implements TaskService {
     public List<TaskResponse> getMyTasks() {
         Long currentUserId = SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new ResourceNotFoundException("User", "context", "current user"));
-        return taskRepository.findByAssignedToId(currentUserId).stream()
+        return taskRepository.findByAssignedToIdAndProjectIsDeletedFalse(currentUserId).stream()
                 .map(TaskResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -330,7 +341,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public void deleteTask(Long taskId) {
-        Task task = taskRepository.findById(taskId)
+        Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
         Long projectId = task.getProject().getId();
         taskRepository.delete(task);

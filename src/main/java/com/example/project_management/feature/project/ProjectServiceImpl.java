@@ -83,7 +83,7 @@ public class ProjectServiceImpl implements ProjectService {
                     "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
         }
 
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
 
         project.setName(request.name());
@@ -97,7 +97,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public ProjectResponse getProjectById(Long id) {
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
 
         // Kiểm tra quyền: Admin/PM thấy tất cả; member khác chỉ thấy project mình tham gia
@@ -118,8 +118,8 @@ public class ProjectServiceImpl implements ProjectService {
     public List<ProjectResponse> getAllProjects() {
         boolean isPrivileged = isAdminOrManager();
         if (isPrivileged) {
-            // Admin/PM thấy tất cả
-            return projectRepository.findAll().stream()
+            // Admin/PM thấy tất cả dự án chưa bị xóa
+            return projectRepository.findByIsDeletedFalse().stream()
                     .map(ProjectResponse::fromEntity)
                     .collect(Collectors.toList());
         }
@@ -143,27 +143,17 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void deleteProject(Long id) {
-        Project project = projectRepository.findById(id)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", id));
 
         // Lấy danh sách thành viên để thông báo
         List<ProjectMember> members = projectMemberRepository.findByProjectId(id);
-        
-        // 1. Delete all comments inside tasks of this project
-        // 2. Delete the tasks
-        List<Task> tasks = taskRepository.findByProjectId(id);
-        for (Task task : tasks) {
-            commentRepository.deleteByTaskId(task.getId());
-            taskRepository.delete(task);
-        }
 
-        // 3. Delete all project members
-        projectMemberRepository.deleteByProjectId(id);
+        // 1. Soft delete project
+        project.setDeleted(true);
+        projectRepository.save(project);
 
-        // 4. Finally delete the project
-        projectRepository.deleteById(id);
-
-        // 5. Gửi thông báo xoá dự án đến các thành viên (ngoại trừ người đang thực hiện xoá)
+        // 2. Gửi thông báo xoá dự án đến các thành viên (ngoại trừ người đang thực hiện xoá)
         Long currentUserId = SecurityUtil.getCurrentUserId().orElse(null);
         for (ProjectMember pm : members) {
             if (!pm.getUser().getId().equals(currentUserId)) {
@@ -176,7 +166,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void addMemberToProject(Long projectId, ProjectMemberRequest request) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
         User user = userRepository.findById(request.userId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.userId()));
@@ -199,9 +189,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional
     public void removeMemberFromProject(Long projectId, Long userId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project", "id", projectId);
-        }
+        projectRepository.findByIdAndIsDeletedFalse(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
         if (!projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             throw new ResourceNotFoundException("ProjectMember", "userId", userId);
         }
@@ -211,9 +200,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public java.util.List<com.example.project_management.feature.user.dto.UserResponse> getProjectMembers(Long projectId) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project", "id", projectId);
-        }
+        projectRepository.findByIdAndIsDeletedFalse(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
         return projectMemberRepository.findByProjectId(projectId).stream()
                 .map(pm -> com.example.project_management.feature.user.dto.UserResponse.fromEntity(pm.getUser()))
                 .collect(Collectors.toList());
@@ -222,9 +210,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public java.util.List<com.example.project_management.feature.user.dto.UserResponse> suggestMembers(Long projectId, String query) {
-        if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project", "id", projectId);
-        }
+        projectRepository.findByIdAndIsDeletedFalse(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
         String q = (query == null ? "" : query.toLowerCase().trim());
         return projectMemberRepository.findByProjectId(projectId).stream()
                 .map(ProjectMember::getUser)

@@ -8,6 +8,18 @@ public enum TaskStatus {
     DONE,
     BLOCKED;
 
+    public String getDisplayName() {
+        switch (this) {
+            case TODO: return "Cần làm";
+            case IN_PROGRESS: return "Đang làm";
+            case IN_REVIEW: return "Chờ review";
+            case TESTING: return "Đang test";
+            case DONE: return "Hoàn thành";
+            case BLOCKED: return "Tạm dừng";
+            default: return this.name();
+        }
+    }
+
     public static boolean isValidTransition(TaskStatus oldStatus, TaskStatus newStatus) {
         if (oldStatus == newStatus) {
             return true;

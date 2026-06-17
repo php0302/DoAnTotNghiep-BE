@@ -40,6 +40,9 @@ public class TaskSpecification {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            // 0. Exclude tasks of soft-deleted projects
+            predicates.add(cb.equal(root.get("project").get("isDeleted"), false));
+
             // 1. Keyword search: LIKE %keyword% trên title (case-insensitive)
             if (keyword != null && !keyword.isBlank()) {
                 predicates.add(

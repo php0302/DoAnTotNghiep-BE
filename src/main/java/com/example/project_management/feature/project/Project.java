@@ -43,6 +43,12 @@ public class Project {
     @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
     private java.util.List<ProjectMember> members = new java.util.ArrayList<>();
 
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    private java.util.List<com.example.project_management.feature.task.Task> tasks = new java.util.ArrayList<>();
+
+    @Column(nullable = false)
+    private boolean isDeleted = false;
+
     @CreationTimestamp
     private Instant createdAt;
 
@@ -68,6 +74,15 @@ public class Project {
 
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+
+    public boolean isDeleted() { return isDeleted; }
+    public void setDeleted(boolean deleted) { isDeleted = deleted; }
+
+    public java.util.List<com.example.project_management.feature.task.Task> getTasks() { return tasks; }
+    public void setTasks(java.util.List<com.example.project_management.feature.task.Task> tasks) { this.tasks = tasks; }
+
+    public java.util.List<ProjectMember> getMembers() { return members; }
+    public void setMembers(java.util.List<ProjectMember> members) { this.members = members; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

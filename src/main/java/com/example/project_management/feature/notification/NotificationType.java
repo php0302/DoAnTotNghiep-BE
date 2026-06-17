@@ -10,5 +10,6 @@ public enum NotificationType {
     PROJECT_DELETED,
     PASSWORD_CHANGED,
     USER_DEACTIVATED,
+    DEADLINE_PASSED,
     GENERAL
 }

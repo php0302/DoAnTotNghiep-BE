@@ -5,6 +5,7 @@ import com.example.project_management.exception.InvalidRequestException;
 import com.example.project_management.exception.ResourceNotFoundException;
 import com.example.project_management.feature.task.Task;
 import com.example.project_management.feature.task.TaskRepository;
+import com.example.project_management.feature.task.TaskStatus;
 import com.example.project_management.feature.user.User;
 import com.example.project_management.feature.user.UserRepository;
 import com.example.project_management.feature.worklog.dto.DailyReportResponse;
@@ -54,6 +55,10 @@ public class WorkLogServiceImpl implements WorkLogService {
 
         if (task.getAssignedTo() == null || !task.getAssignedTo().getId().equals(currentUserId)) {
             throw new ForbiddenException("Chỉ người được giao công việc này mới có thể báo cáo thời gian làm.");
+        }
+
+        if (task.getDeadline() != null && task.getDeadline().isBefore(LocalDate.now()) && task.getStatus() != TaskStatus.DONE) {
+            throw new InvalidRequestException("Không thể báo cáo thời gian cho công việc đã quá hạn deadline.");
         }
 
         if (request.logDate() != null && !request.logDate().equals(LocalDate.now())) {
