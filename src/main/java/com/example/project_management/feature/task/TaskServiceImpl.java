@@ -64,6 +64,10 @@ public class TaskServiceImpl implements TaskService {
         Project project = projectRepository.findByIdAndIsDeletedFalse(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
 
+        if (request.deadline() != null && project.getEndDate() != null && request.deadline().isAfter(project.getEndDate())) {
+            throw new InvalidRequestException("Deadline không được vượt quá ngày kết thúc dự án (" + project.getEndDate() + ")");
+        }
+
         Task task = new Task();
         task.setTitle(request.title());
         task.setDescription(request.description());
@@ -111,6 +115,11 @@ public class TaskServiceImpl implements TaskService {
 
         Task task = taskRepository.findByIdAndProjectIsDeletedFalse(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+
+        Project project = task.getProject();
+        if (request.deadline() != null && project.getEndDate() != null && request.deadline().isAfter(project.getEndDate())) {
+            throw new InvalidRequestException("Deadline không được vượt quá ngày kết thúc dự án (" + project.getEndDate() + ")");
+        }
 
         task.setTitle(request.title());
         task.setDescription(request.description());
